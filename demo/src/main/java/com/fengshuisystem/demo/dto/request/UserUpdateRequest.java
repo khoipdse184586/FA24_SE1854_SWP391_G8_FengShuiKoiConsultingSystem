@@ -2,9 +2,7 @@
 package com.fengshuisystem.demo.dto.request;
 
 import com.fengshuisystem.demo.validator.DobConstraint;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -16,23 +14,26 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserUpdateRequest {
-    @Size(min = 4, message = "USERNAME_INVALID")
-    String username;
+    @NotBlank(message = "Username is required")
+    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
+    String userName;
 
-    @Size(min = 6, message = "INVALID_PASSWORD")
-    String password;
+    @NotBlank(message = "Full name is required")
+    @Size(min = 3, max = 100, message = "Full name must be between 3 and 100 characters")
+    String fullName;
 
-    @Email(message = "INVALID_EMAIL")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
     String email;
 
-    @DobConstraint(min = 18, message = "INVALID_DOB")
-    LocalDate dob;
-
-    @Size(min = 10, message = "INVALID_PHONE_NUMBER")
+    @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Phone number must be between 10 and 15 digits")
     String phoneNumber;
 
+    @NotNull(message = "Date of birth is required")
+    @Past(message = "Date of birth must be a past date")
+    LocalDate dob;
 
-    @Pattern(regexp = "male|female", message = "INVALID_GENDER")
-    String gender;
+
 
 }

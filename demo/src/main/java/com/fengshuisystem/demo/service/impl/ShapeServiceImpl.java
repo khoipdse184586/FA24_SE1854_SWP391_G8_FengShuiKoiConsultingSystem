@@ -16,6 +16,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -40,7 +41,8 @@ public class ShapeServiceImpl implements ShapeService {
     public ShapeDTO createShape(ShapeDTO shapeDTO) {
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
-        if(shapeRepository.existsByShape((shapeDTO.getShape()))) throw new AppException(ErrorCode.ANIMAL_EXISTED);
+        if(shapeRepository.existsByShape((shapeDTO.getShape()))) throw new AppException(ErrorCode.SHAPE_EXISTED);
+        if(shapeDTO.getDestiny() == null) throw new AppException(ErrorCode.DESTINY_NOT_EXISTED);
         Destiny destiny = destinyRepository.findById(shapeDTO.getDestiny().getId()).orElseThrow(() -> new AppException(ErrorCode.DESTINY_NOT_EXISTED));
         Shape shape = shapeMapper.toEntity(shapeDTO);
         shape.setStatus(Status.ACTIVE);
@@ -58,9 +60,9 @@ public class ShapeServiceImpl implements ShapeService {
         Status status = Status.ACTIVE;
         Sort sort = Sort.by("createdDate").descending();
         Pageable pageable = PageRequest.of(page - 1, size, sort);
-        var pageData = shapeRepository.findAlByShape(name, pageable);
+        var pageData = shapeRepository.findAlByShapeNameContaining(name, status, pageable);
         if(pageData.isEmpty()) {
-            throw new AppException(ErrorCode.ANIMAL_NOT_EXISTED);
+            throw new AppException(ErrorCode.NONE_DATA_SHAPE);
         }
         return PageResponse.<ShapeDTO>builder()
                 .currentPage(page)
@@ -79,7 +81,7 @@ public class ShapeServiceImpl implements ShapeService {
         Pageable pageable = PageRequest.of(page - 1, size, sort);
         var pageData = shapeRepository.findAllByStatus(status, pageable);
         if(pageData.isEmpty()) {
-            throw new AppException(ErrorCode.ANIMAL_NOT_EXISTED);
+            throw new AppException(ErrorCode.NONE_DATA_SHAPE);
         }
         return PageResponse.<ShapeDTO>builder()
                 .currentPage(page)
@@ -94,7 +96,7 @@ public class ShapeServiceImpl implements ShapeService {
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteShape(Integer id) {
-        var shape = shapeRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.ANIMAL_NOT_EXISTED));
+        var shape = shapeRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.SHAPE_NOT_EXISTED));
         shape.setStatus(Status.DELETED);
         shapeRepository.save(shape);
     }
@@ -103,21 +105,26 @@ public class ShapeServiceImpl implements ShapeService {
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public ShapeDTO updateShape(Integer id, ShapeDTO shapeDTO) {
+        if (shapeDTO.getId() == null) {
+            throw new InvalidDataAccessApiUsageException("The given id must not be null");
+        }
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
-        Shape shape = shapeRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.ANIMAL_NOT_EXISTED));
-        shapeMapper.update(shapeDTO, shape);
+        if(shapeDTO.getDestiny() == null) throw new AppException(ErrorCode.DESTINY_NOT_EXISTED);
         Destiny destiny = destinyRepository.findById(shapeDTO.getDestiny().getId()).orElseThrow(() -> new AppException(ErrorCode.DESTINY_NOT_EXISTED));
+        Shape shape = shapeRepository.findById(shapeDTO.getId()).orElseThrow(() -> new AppException(ErrorCode.SHAPE_NOT_EXISTED));
+        if(shapeRepository.findByShape((shapeDTO.getShape())).isPresent()) throw new AppException(ErrorCode.SHAPE_EXISTED);
+        shape.setDestiny(destiny);
+        shapeMapper.update(shapeDTO, shape);
         shape.setUpdatedBy(name);
         shape.setUpdatedDate(Instant.now());
-        shape.setDestiny(destiny);
         return shapeMapper.toDto(shapeRepository.saveAndFlush(shape));
     }
-    @PreAuthorize("hasRole('ADMIN')")
     public List<ShapeDTO> getAllShapes() {
         Status status = Status.ACTIVE;
         return shapeRepository.findAllByStatus(status).stream().map(shapeMapper::toDto).toList();
     }
+
     @Override
     public List<ShapeDTO> getShapesByDestiny(Integer destiny) {
         List<ShapeDTO> shapes = shapeRepository.findAllByDestiny(destiny)
@@ -129,4 +136,12 @@ public class ShapeServiceImpl implements ShapeService {
         }
         return shapes;
     }
+
+    @Override
+    public ShapeDTO getShapeById(Integer id) {
+        Shape shape = shapeRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.SHAPE_NOT_EXISTED));
+        return shapeMapper.toDto(shape);
+    }
+
+
 }

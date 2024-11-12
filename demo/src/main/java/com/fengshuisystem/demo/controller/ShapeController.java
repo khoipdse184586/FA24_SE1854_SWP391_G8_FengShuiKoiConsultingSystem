@@ -4,6 +4,7 @@ package com.fengshuisystem.demo.controller;
 import com.fengshuisystem.demo.dto.ApiResponse;
 import com.fengshuisystem.demo.dto.PageResponse;
 import com.fengshuisystem.demo.dto.ShapeDTO;
+import com.fengshuisystem.demo.entity.Shape;
 import com.fengshuisystem.demo.service.ShapeService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -20,9 +21,11 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class ShapeController {
+
     ShapeService shapeService;
+
     @PostMapping
-    public ApiResponse<ShapeDTO> createShape(@RequestBody ShapeDTO shapeRequest) {
+    public ApiResponse<ShapeDTO> createShape(@Valid @RequestBody ShapeDTO shapeRequest) {
         return ApiResponse.<ShapeDTO>builder()
                 .result(shapeService.createShape(shapeRequest))
                 .build();
@@ -38,7 +41,7 @@ public class ShapeController {
                 .build();
     }
 
-    @GetMapping("/search-shapes")
+    @GetMapping("/shape-search")
     public ApiResponse<PageResponse<ShapeDTO>> getShapesBySearch(
             @RequestParam String name,
             @RequestParam(value = "page", required = false, defaultValue = "1") int page,
@@ -51,7 +54,8 @@ public class ShapeController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<ShapeDTO> updateShape(@PathVariable Integer id, @RequestBody @Valid ShapeDTO shapeRequest) {
+    public ApiResponse<ShapeDTO> updateShape(@PathVariable Integer id,@Valid @RequestBody  ShapeDTO shapeRequest) {
+        shapeRequest.setId(id);
         return ApiResponse.<ShapeDTO>builder()
                 .result(shapeService.updateShape(id, shapeRequest))
                 .build();
@@ -67,6 +71,13 @@ public class ShapeController {
     public ApiResponse<List<ShapeDTO>> getAllShapes() {
         return ApiResponse.<List<ShapeDTO>>builder()
                 .result(shapeService.getAllShapes())
+                .build();
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<ShapeDTO> getShape(@PathVariable Integer id) {
+        return ApiResponse.<ShapeDTO>builder()
+                .result(shapeService.getShapeById(id))
                 .build();
     }
 }

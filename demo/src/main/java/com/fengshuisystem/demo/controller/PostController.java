@@ -57,4 +57,50 @@ public class PostController {
                 .result("The post has been deleted")
                 .build();
     }
+    @GetMapping("/search-posts/email")
+    public ApiResponse<PageResponse<PostDTO>> getPostsByAccountEmail(
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") int size
+
+    ) {
+        return ApiResponse.<PageResponse<PostDTO>>builder()
+                .result(postService.getPostByAccountEmail(page, size))
+                .build();
+    }
+    @GetMapping("/search-posts/title")
+    public ApiResponse<PageResponse<PostDTO>> getPostsByTitle(
+            @RequestParam String title,
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") int size
+
+    ) {
+        return ApiResponse.<PageResponse<PostDTO>>builder()
+                .result(postService.getPostByTitle(title,page, size))
+                .build();
+    }
+    @GetMapping("/search-posts/{id}")
+    public ApiResponse<PostDTO> getPostById(@PathVariable Integer id) {
+        return ApiResponse.<PostDTO>builder().result(postService.getPostById(id)).build();
+    }
+
+    @GetMapping("/count")
+    public ApiResponse<Long> getPostCount() {
+        long postCount = postService.getPostCount();
+        return ApiResponse.<Long>builder()
+                .result(postCount)
+                .build();
+    }
+
+@GetMapping("/search-posts/year")
+    public ApiResponse<PageResponse<PostDTO>> getPostsByYear(
+            @RequestParam Integer year,
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") int size
+
+    ) {
+        return ApiResponse.<PageResponse<PostDTO>>builder()
+                .result(postService.getPostsByYear(page, size, year))
+                .build();
+    }
+
 }

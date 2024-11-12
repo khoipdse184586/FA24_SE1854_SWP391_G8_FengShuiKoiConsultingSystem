@@ -1,9 +1,11 @@
 package com.fengshuisystem.demo.repository;
 
-import com.fengshuisystem.demo.entity.ConsultationAnimal;
+import com.fengshuisystem.demo.entity.AnimalCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
-public interface ConsulationAnimalRepository extends JpaRepository<ConsultationAnimal, Integer> {
+public interface AnimalCategoryRepository extends JpaRepository<AnimalCategory, Integer> {
 }

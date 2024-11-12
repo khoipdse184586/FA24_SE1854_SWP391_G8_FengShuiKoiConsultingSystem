@@ -18,16 +18,16 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-public class Package {
+public class    Package {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "package_id", nullable = false)
     // id -> packageId
-    private Integer packageId;
+    private Integer id;
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private Status status = Status.INACTIVE;
+    private Status status = Status.ACTIVE;
 
     @Size(max = 100)
     @NotNull
@@ -62,6 +62,7 @@ public class Package {
     private String updatedBy;
 
     @OneToMany(mappedBy = "packageId", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JsonIgnore
     private Set<ConsultationRequest> consultationRequests = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "packageId", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})

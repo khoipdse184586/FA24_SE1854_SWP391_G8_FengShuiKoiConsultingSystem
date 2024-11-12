@@ -1,4 +1,3 @@
-
 package com.fengshuisystem.demo.service;
 
 import com.fengshuisystem.demo.dto.AnimalCategoryDTO;
@@ -12,6 +11,8 @@ public interface AnimalService {
     PageResponse<AnimalCategoryDTO> getAnimals(int page, int size);
     void deleteAnimal(Integer id);
     AnimalCategoryDTO updateAnimal(Integer id, AnimalCategoryDTO request);
-    AnimalCategoryDTO getAnimalById(Integer id);
     List<AnimalCategoryDTO> getAnimalCategoryByColorId(int color);
+    AnimalCategoryDTO getAnimalById(Integer id);
+    List<AnimalCategoryDTO> getAllAnimalCategory();
+    public PageResponse<AnimalCategoryDTO> getAnimalsByDestiny(List<String> destiny, int page, int size);
 }

@@ -1,8 +1,9 @@
-
 package com.fengshuisystem.demo.controller;
 
 import com.fengshuisystem.demo.dto.ApiResponse;
+import com.fengshuisystem.demo.dto.PageResponse;
 import com.fengshuisystem.demo.dto.request.PasswordCreationRequest;
+import com.fengshuisystem.demo.dto.request.UpdateFCMRequest;
 import com.fengshuisystem.demo.dto.request.UserCreationRequest;
 import com.fengshuisystem.demo.dto.request.UserUpdateRequest;
 import com.fengshuisystem.demo.dto.response.UserResponse;
@@ -39,14 +40,14 @@ public class UserController {
     }
 
     @PostMapping("/create-password")
-    ApiResponse<Void> createPassword(@RequestBody @Valid PasswordCreationRequest request) {
+    ApiResponse<Void> createPassword(@RequestBody @Valid  PasswordCreationRequest request) {
         userService.createPassword(request);
         return ApiResponse.<Void>builder()
                 .message("Password has been created, you could use it to log-in")
                 .build();
     }
 
-    @GetMapping
+    @GetMapping("/getUsers")
     ApiResponse<List<UserResponse>> getUsers() {
         return ApiResponse.<List<UserResponse>>builder()
                 .result(userService.getUsers())
@@ -74,7 +75,7 @@ public class UserController {
                 .build();
     }
 
-    @PutMapping("/{userId}")
+    @PutMapping("/{email}")//update
     ApiResponse<UserResponse> updateUser(@PathVariable String email, @RequestBody UserUpdateRequest request) {
         return ApiResponse.<UserResponse>builder()
                 .result(userService.updateUser(email, request))
@@ -114,6 +115,65 @@ public class UserController {
 
         return ApiResponse.<String>builder()
                 .result(userService.resetPassword(email, newPassword.getPassword()))
+                .build();
+    }
+
+    @GetMapping
+    public ApiResponse<PageResponse<UserResponse>> getAllUsers(
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") int size
+    ) {
+
+        return ApiResponse.<PageResponse<UserResponse>>builder()
+                .result(userService.getAllUsers(page, size))
+                .build();
+    }
+
+    @GetMapping("/search-name")
+    public ApiResponse<PageResponse<UserResponse>> getUserBySearch(
+            @RequestParam String name,
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") int size
+
+    ) {
+        return ApiResponse.<PageResponse<UserResponse>>builder()
+                .result(userService.getUsersBySearch(name, page, size))
+                .build();
+    }
+
+    @PostMapping("{userId}/set-roles")
+    public ApiResponse<UserResponse> setRole(@PathVariable Integer userId, @RequestParam List<Integer> id) {
+        return ApiResponse.<UserResponse>builder()
+                .result(userService.setRole(userId, id))
+                .build();
+    }
+    @GetMapping("/new-users-today")
+    public ApiResponse<Long> getNewUsersToday() {
+        long newUsersToday = userService.getNewUsersToday();
+        return ApiResponse.<Long>builder()
+                .result(newUsersToday)
+                .build();
+    }
+    @GetMapping("/new-users-this-week")
+    public ApiResponse<Long> getNewUsersThisWeek() {
+        long newUsersThisWeek = userService.getNewUsersThisWeek();
+        return ApiResponse.<Long>builder()
+                .result(newUsersThisWeek)
+                .build();
+    }
+    @GetMapping("/new-users-this-month")
+    public ApiResponse<Long> getNewUsersThisMonth() {
+        long newUsersThisMonth = userService.getNewUsersThisMonth();
+        return ApiResponse.<Long>builder()
+                .result(newUsersThisMonth)
+                .build();
+    }
+
+    @PatchMapping("/fcm")
+    public ApiResponse<String> saveFcmToken(@RequestBody @Valid UpdateFCMRequest updateFCMRequest) {
+        userService.updateFCM(updateFCMRequest);
+        return ApiResponse.<String>builder()
+                .result("FCM token updated successfully")
                 .build();
     }
 }

@@ -1,7 +1,6 @@
 
 package com.fengshuisystem.demo.repository;
 
-import com.fengshuisystem.demo.dto.AnimalCategoryDTO;
 import com.fengshuisystem.demo.entity.AnimalCategory;
 import com.fengshuisystem.demo.entity.enums.Status;
 import feign.Param;
@@ -18,6 +17,7 @@ import java.util.Optional;
 @Repository
 public interface AnimalRepository extends JpaRepository<AnimalCategory, Integer> {
     boolean existsByAnimalCategoryName(String name);
+    Optional<AnimalCategory> findByAnimalCategoryName(String name);
     Page<AnimalCategory> findAllByStatus(Status status, Pageable pageable);
     @Query("SELECT ac FROM AnimalCategory ac " +
             "WHERE ac.status = :status " +
@@ -25,4 +25,13 @@ public interface AnimalRepository extends JpaRepository<AnimalCategory, Integer>
     Page<AnimalCategory> findAllByAnimalCategoryNameContainingOriginContaining(String name, Status status, Pageable pageable);
     @Query("SELECT ac FROM AnimalCategory ac JOIN ac.colors c WHERE c.id = :colorId AND ac.status = 'ACTIVE'")
     List<AnimalCategory> findAllByColorId(@Param("colorId") Integer colorId);
+    @Query("SELECT DISTINCT a FROM AnimalCategory a " +
+            "JOIN a.colors c " +
+            "JOIN c.destiny d " +
+            "WHERE d.destiny IN :destiny AND a.status = :status " +
+            "ORDER BY a.id DESC")
+    Page<AnimalCategory> findActiveAnimalCategoriesByDestiny(@Param("destiny") List<String> destiny,
+                                                             @Param("status") Status status,
+                                                             Pageable pageable);
+
 }

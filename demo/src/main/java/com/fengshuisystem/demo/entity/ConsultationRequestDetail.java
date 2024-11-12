@@ -1,12 +1,16 @@
 package com.fengshuisystem.demo.entity;
 
-import com.fengshuisystem.demo.entity.enums.Status;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fengshuisystem.demo.entity.enums.Request;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Nationalized;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.Instant;
 import java.util.LinkedHashSet;
@@ -16,31 +20,25 @@ import java.util.Set;
 @Setter
 @Entity
 public class ConsultationRequestDetail {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "consultation_request_detail_id", nullable = false)
     private Integer id;
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn
-    private ConsultationRequest requestDetail;
-
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn
-    private ShelterCategory shelterCategory;
-
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn
-    private AnimalCategory animalCategory;
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE, CascadeType.REFRESH})
+    @JoinColumn(name = "consultation_request_id", nullable = false)
+    @JsonIgnore
+    private ConsultationRequest consultationRequest;
 
     @NotNull
-    @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private Status status = Status.INACTIVE;
+    @Column(name = "status", nullable = false)
+    private Request status = Request.PENDING; //
 
     @NotNull
     @Column(name = "created_date", nullable = false)
-    private Instant createdDate = Instant.now();
+    private Instant createdDate;
 
     @Size(max = 300)
     @NotNull
@@ -49,43 +47,68 @@ public class ConsultationRequestDetail {
     private String createdBy;
 
     @NotNull
-    // updateted -> updated
     @Column(name = "updated_date", nullable = false)
-    private Instant updatedDate = Instant.now();
+    private Instant updatedDate;
 
     @Size(max = 300)
     @NotNull
     @Nationalized
-    // updateted -> updated
     @Column(name = "updated_by", nullable = false, length = 300)
     private String updatedBy;
 
-    // add description and can not be null
-    @Size(max = 1000)
     @NotNull
+    @NotBlank
     @Nationalized
-    @Column(name = "description", length = 1000)
+    @Column(name = "description", nullable = false, length = 4000)
     private String description;
 
-    @OneToMany(mappedBy = "requestDetail", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    // Phương thức kiểm tra số từ có đủ ít nhất 100 từ
+    @SuppressWarnings("unused")
+    @AssertTrue(message = "The description must contain at least 100 words.")
+    public boolean isDescriptionValid() {
+        if (description == null) {
+            return false;
+        }
+        // Tách `description` thành các từ bằng regex
+        String[] words = description.trim().split("\\s+");
+        return words.length >= 100;
+    }
+
+    @OneToMany(mappedBy = "requestDetail", cascade = CascadeType.ALL)
     private Set<ConsultationResult> consultationResults = new LinkedHashSet<>();
 
-    // Many-to-Many with AnimalCategory
-    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @Getter
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
     @JoinTable(
-            name = "consultation_detail_animal_category",
+            name = "consultation_shelter_category",
+            joinColumns = @JoinColumn(name = "consultation_request_detail_id"),
+            inverseJoinColumns = @JoinColumn(name = "shelter_category_id")
+    )
+    private Set<ShelterCategory> shelterCategories = new LinkedHashSet<>();
+
+    @Getter
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @JoinTable(
+            name = "consultation_animal_category",
             joinColumns = @JoinColumn(name = "consultation_request_detail_id"),
             inverseJoinColumns = @JoinColumn(name = "animal_category_id")
     )
     private Set<AnimalCategory> animalCategories = new LinkedHashSet<>();
 
-    // Many-to-Many with ShelterCategory
-    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinTable(
-            name = "consultation_detail_shelter_category",
-            joinColumns = @JoinColumn(name = "consultation_request_detail_id"),
-            inverseJoinColumns = @JoinColumn(name = "shelter_category_id")
-    )
-    private Set<ShelterCategory> shelterCategories = new LinkedHashSet<>();
+    @PrePersist
+    protected void onCreate() {
+        Instant now = Instant.now();
+        this.createdDate = now;
+        this.updatedDate = now;
+        this.createdBy = SecurityContextHolder.getContext().getAuthentication().getName();
+        this.updatedBy = this.createdBy;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedDate = Instant.now();
+        this.updatedBy = SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
 
 }

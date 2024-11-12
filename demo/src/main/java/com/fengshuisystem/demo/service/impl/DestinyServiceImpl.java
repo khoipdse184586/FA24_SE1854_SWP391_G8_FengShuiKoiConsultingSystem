@@ -1,6 +1,11 @@
 package com.fengshuisystem.demo.service.impl;
 
 import com.fengshuisystem.demo.dto.*;
+import com.fengshuisystem.demo.dto.request.DestinyTuongKhac;
+import com.fengshuisystem.demo.dto.request.DestinyTuongSinh;
+import com.fengshuisystem.demo.entity.Destiny;
+import com.fengshuisystem.demo.exception.AppException;
+import com.fengshuisystem.demo.exception.ErrorCode;
 import com.fengshuisystem.demo.mapper.DestinyMapper;
 import com.fengshuisystem.demo.repository.DestinyRepository;
 import com.fengshuisystem.demo.service.*;
@@ -33,10 +38,11 @@ public class DestinyServiceImpl implements DestinyService {
     // Bảng Chi (0-11 tương ứng với Thân, Dậu, Tuất, Hợi, Tý, Sửu, Dần, Mão, Thìn, Tỵ, Ngọ, Mùi)
     int[] EARTHLY_BRANCH_VALUES = {1, 1, 2, 2, 0, 0, 1, 1, 2, 2, 0, 0};
 
-    List<String> tuongSinhList = Arrays.asList("KIM", "THỦY", "MỘC", "HỎA", "THỔ");
-    List<String> tuongKhacList = Arrays.asList("KIM", "MỘC", "THỔ", "THỦY", "HỎA");
+    List<String> tuongSinhList  = Arrays.asList("METAL", "WATER", "WOOD", "FIRE", "EARTH");
+    List<String> tuongKhacList  = Arrays.asList("METAL", "WOOD", "EARTH", "WATER", "FIRE");
 
-    String[] ELEMENTS = {"KIM", "THỦY", "HỎA", "THỔ", "MỘC"};
+    String[] ELEMENTS = {"METAL", "WATER", "FIRE", "EARTH", "WOOD"};
+
 
     @Override
     public String getDestinyFromYear(int yearOfBirth) {
@@ -87,7 +93,9 @@ public class DestinyServiceImpl implements DestinyService {
 
     @Override
     public DestinyDTO getDestinyId(String destinyName) {
-        return destinyMapper.toDto(destinyRepository.findByDestiny(destinyName));
+        Destiny destiny = destinyRepository.findByDestiny(destinyName)
+                .orElseThrow(() -> new AppException(ErrorCode.DESTINY_NOT_EXISTED));
+        return destinyMapper.toDto(destiny);
     }
 
     @Override
@@ -99,7 +107,7 @@ public class DestinyServiceImpl implements DestinyService {
     }
 
     @Override
-    public DestinyDTO getDestinyByDirecton(int directionId) {
+    public DestinyDTO getDestinyByDirection(int directionId) {
         return destinyMapper.toDto(destinyRepository.findByDirectionId(directionId));
     }
 
@@ -116,9 +124,9 @@ public class DestinyServiceImpl implements DestinyService {
 
 
     @Override
-    public List<String> getAnimalNames(Integer destinyId, String tuongKhacTruoc, String tuongKhacSau) {
+    public List<AnimalCategoryDTO> getAnimal(Integer destinyId, String tuongKhacTruoc, String tuongKhacSau) {
         List<ColorDTO> colors = colorService.getColorsByDestiny(destinyId);
-        List<String> animalNames = new ArrayList<>();
+        List<AnimalCategoryDTO> animalList = new ArrayList<>();
         for (ColorDTO color : colors) {
             List<AnimalCategoryDTO> animalCategories = animalService.getAnimalCategoryByColorId(color.getId());
             for (AnimalCategoryDTO animalCategory : animalCategories) {
@@ -134,25 +142,51 @@ public class DestinyServiceImpl implements DestinyService {
                     }
                 }
                 if (!hasConflict) {
-                    animalNames.add(animalCategory.getAnimalCategoryName());
+                    animalList.add(animalCategory);
                 }
             }
         }
-        return animalNames;
+        return animalList;
     }
 
 
     @Override
-    public List<String> getShelterNames(Integer destinyId) {
+    public List<ShelterCategoryDTO> getShelter(Integer destinyId) {
         List<ShapeDTO> shapes = shapeService.getShapesByDestiny(destinyId);
-        List<String> shelterNames = new ArrayList<>();
+        List<ShelterCategoryDTO> shelterList = new ArrayList<>();
         for (ShapeDTO shape : shapes) {
             List<ShelterCategoryDTO> shelters = shelterService.getAllSheltersByShape(shape.getId());
-            for (ShelterCategoryDTO shelter : shelters) {
-                shelterNames.add(shelter.getShelterCategoryName());
-            }
+            shelterList.addAll(shelters);
         }
-        return shelterNames;
+        return shelterList;
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public DestinyDTO getAllDestinyTuongSinhAndTuongKhac(String destinyName) {
+        Destiny destiny = destinyRepository.findByDestiny(destinyName)
+                .orElseThrow(() -> new AppException(ErrorCode.DESTINY_NOT_EXISTED));
+
+        // Map Destiny thành DestinyDTO
+        DestinyDTO dto = destinyMapper.toDto(destiny);
+
+        // Tìm danh sách tương sinh
+        String tuongSinhTruoc = findTuongSinhTruoc(dto.getDestiny());
+        String tuongSinhSau = findTuongSinhSau(dto.getDestiny());
+        dto.setDestinyTuongSinhs(Arrays.asList(
+                new DestinyTuongSinh(tuongSinhTruoc),
+                new DestinyTuongSinh(tuongSinhSau)
+        ));
+
+        // Tìm danh sách tương khắc
+        String tuongKhacTruoc = findTuongKhacTruoc(dto.getDestiny());
+        String tuongKhacSau = findTuongKhacSau(dto.getDestiny());
+        dto.setDestinyTuongKhacs(Arrays.asList(
+                new DestinyTuongKhac(tuongKhacTruoc),
+                new DestinyTuongKhac(tuongKhacSau)
+        ));
+
+        return dto;
     }
 
     @Override

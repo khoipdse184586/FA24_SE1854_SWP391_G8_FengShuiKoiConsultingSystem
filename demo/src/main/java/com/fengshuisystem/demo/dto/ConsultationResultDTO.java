@@ -1,13 +1,17 @@
 package com.fengshuisystem.demo.dto;
 
-import com.fengshuisystem.demo.dto.response.UserResponse;
-import com.fengshuisystem.demo.entity.*;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fengshuisystem.demo.entity.ConsultationCategory;
+import com.fengshuisystem.demo.entity.enums.Request;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-
 import java.time.Instant;
 import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,16 +19,29 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ConsultationResultDTO {
     Integer id;
-    ConsultationRequest request;
-    ConsultationRequestDetailDTO requestDetail;
-    UserResponse account;
+
+    Integer consultationRequestId;
+    Integer consultationRequestDetailId;
+
+    Integer accountId;
+
+    @JsonIgnore
     ConsultationCategory consultationCategory;
+
+    Integer consultationCategoryId;
+
     Instant consultationDate;
     String consultantName;
-    String status ;
+    Request status;
+
+    @NotBlank
+    String description;
+
     Instant createdDate;
     String createdBy;
-    Instant updatetedDate;
-    String updatetedBy;
+    Instant updatedDate;
+    String updatedBy;
+
+    List<ConsultationAnimalDTO> consultationAnimals;
     List<ConsultationShelterDTO> consultationShelters;
 }

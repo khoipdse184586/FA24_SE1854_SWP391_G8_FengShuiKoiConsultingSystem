@@ -1,22 +1,27 @@
 package com.fengshuisystem.demo.mapper;
 
 import com.fengshuisystem.demo.dto.ConsultationRequestDTO;
-import com.fengshuisystem.demo.dto.ConsultationShelterDTO;
 import com.fengshuisystem.demo.entity.ConsultationRequest;
-import com.fengshuisystem.demo.entity.ConsultationShelter;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring")
-public interface ConsultationRequestMapper{
+public interface ConsultationRequestMapper {
 
-    // xóa extends
-    // cẩn thận Conflict
-    // Ánh xạ từ DTO sang Entity
-    @Mapping(source = "packageId", target = "packageId.packageId")
-    ConsultationRequest toEntity(ConsultationRequestDTO requestDTO);
+    @Mapping(source = "packageId", target = "packageId", qualifiedByName = "packageToPackageId")
+    ConsultationRequestDTO toDTO(ConsultationRequest consultationRequest);
 
-    // Ánh xạ từ Entity sang DTO
-    @Mapping(source = "packageId.packageId", target = "packageId")
-    ConsultationRequestDTO toDTO(ConsultationRequest request);
+    @Mapping(target = "fullName", source = "fullName")
+    @Mapping(target = "gender", source = "gender")
+    @Mapping(target = "packageId", ignore = true)
+    @Mapping(source = "yob", target = "yob")
+    @Mapping(source = "email", target = "email")
+    @Mapping(source = "phone", target = "phone")
+    ConsultationRequest toEntity(ConsultationRequestDTO consultationRequestDTO);
+
+    @Named("packageToPackageId")
+    default Integer mapPackageToPackageId(com.fengshuisystem.demo.entity.Package packageEntity) {
+        return packageEntity != null ? packageEntity.getId() : null;
+    }
 }

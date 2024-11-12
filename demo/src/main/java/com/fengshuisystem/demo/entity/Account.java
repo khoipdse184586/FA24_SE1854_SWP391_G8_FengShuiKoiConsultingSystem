@@ -1,11 +1,14 @@
 package com.fengshuisystem.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fengshuisystem.demo.entity.enums.Gender;
 import com.fengshuisystem.demo.entity.enums.Status;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.Nationalized;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -45,9 +48,9 @@ public class Account {
     @Column(name = "phone_number")
     private String phoneNumber;
 
-
     @Column(name = "gender")
-    private String gender;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     @Lob
     @Column(name = "avatar")
@@ -64,18 +67,20 @@ public class Account {
     private Status status = Status.INACTIVE;
 
     @Column(name = "created_date")
-    private Instant createdDate ;
+    private Instant createdDate;
 
     @Size(max = 50)
     @Column(name = "created_by",  length = 50)
     private String createdBy;
 
     @Column(name = "updated_date")
-    private Instant updatedDate ;
+    private Instant updatedDate;
 
     @Size(max = 50)
     @Column(name = "updated_by", length = 50)
     private String updatedBy;
+
+    private String fcmToken;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinTable(name = "account_role",
@@ -94,6 +99,4 @@ public class Account {
 
     @OneToMany(mappedBy = "account", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     private Set<Post> posts = new LinkedHashSet<>();
-
-
 }
